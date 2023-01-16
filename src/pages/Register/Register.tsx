@@ -102,10 +102,10 @@ function Register({ history }: any) {
               alert("Usuario registrado exitosamente");
             })
             .catch(() => {
-              alert("ERROR INESPERADO");
+              alert("ERROR INESPERADO =(");
             });
         } else {
-          alert("no hay usuario");
+          alert("No hay usuario");
         }
       });
     });
