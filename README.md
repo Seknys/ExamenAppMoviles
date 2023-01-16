@@ -1,7 +1,7 @@
 # Examen Final de Aplicacion esmoviles
 Integrantes:
 Steven Guañuna
-Jahel Nicolalde
+Jhael Nicolalde
 
 Capturas del funcionamiento de la aplicacion en un telefono celular despues de generar el respectivo apk
 
