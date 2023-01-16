@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import {
   IonHeader,
   IonTitle,
@@ -12,9 +12,15 @@ import {
   IonPage,
   IonContent,
 } from "@ionic/react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import UserContext from "../../context/userContext";
-import { addUsersData, getUrlImage, uploadImage } from "../../service/user";
+import {
+  addUsersData,
+  getOneUserRegistered,
+  getUrlImage,
+  updateUserRegistered,
+  uploadImage,
+} from "../../service/user";
 import { defineCustomElements } from "@ionic/pwa-elements/loader";
 import {
   Camera,
@@ -27,18 +33,40 @@ import { Preferences } from "@capacitor/preferences";
 import { Capacitor } from "@capacitor/core";
 import { camera, trash, close } from "ionicons/icons";
 import { Geolocation, Geoposition } from "@ionic-native/geolocation";
+import { DocumentData } from "firebase/firestore";
+import { v4 as uuidv4 } from "uuid";
+const uidSub: any = uuidv4().substring(0, 8);
+
 function Register({ history }: any) {
-  const [name, setName] = useState<any>();
-  const [lastname, setLastname] = useState<any>();
-  const [numfam, setNumfam] = useState<any>();
+  const { valueId } = useParams<{ valueId: string }>();
+  const [name, setName] = useState<any>("");
+  const [lastname, setLastname] = useState<any>("");
+  const [numfam, setNumfam] = useState<any>("");
   const [dir, setdir] = useState<any>();
-  const [id, setId] = useState<any>();
+  const [id, setId] = useState<any>("");
   const { user } = useContext(UserContext);
 
+  const [imgUrl, setImgUrl] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [position, setPosition] = useState<Geoposition>();
   const [redirect, setRedirect] = useState<boolean>(false);
+  const [auxUid, setAuxUid] = useState<string>("");
   const [file, setFile] = useState<any>();
+  useEffect(() => {
+    if (valueId && user) {
+      const getOneUserSnapshot = (snapshot: DocumentData) => {
+        console.log("SnapshotData 1 user: ", snapshot.data());
+        const userRegistered = snapshot.data();
+        setName(userRegistered.name);
+        setLastname(userRegistered.lastname);
+        setId(userRegistered.id);
+        setNumfam(userRegistered.numfam);
+        setImgUrl(userRegistered.img);
+        setAuxUid(userRegistered.uid);
+      };
+      getOneUserRegistered(user.uid, valueId, getOneUserSnapshot);
+    }
+  }, [valueId]);
 
   const geoLocation = async () => {
     setLoading(true);
@@ -55,32 +83,86 @@ function Register({ history }: any) {
   };
 
   const submitRegister = () => {
-    console.log("FILE: ", file.name);
     const response = uploadImage(file);
     response.then((res) => {
-      console.log("res: ", res.ref.fullPath);
       getUrlImage(res.ref.fullPath).then((url) => {
         console.log("url: ", url);
         const newUserRegistered = {
           name: name,
           lastname: lastname,
           numfam: numfam,
-          dir: dir,
           id: id,
           img: url,
-          ubication: `${position?.coords.latitude} ${position?.coords.longitude}`,
+          uid: uidSub,
         };
         if (user) {
-          addUsersData(user.uid, newUserRegistered).then((res) => {
-            console.log("res succes: ", res);
-
-            history.push("/main-page");
-          });
+          addUsersData(user.uid, newUserRegistered)
+            .then((res) => {
+              console.log("res succes: ", res);
+              alert("Usuario registrado exitosamente");
+            })
+            .catch(() => {
+              alert("ERROR INESPERADO");
+            });
         } else {
-          console.log("no hay usuario");
+          alert("no hay usuario");
         }
       });
     });
+  };
+  const submitUpload = () => {
+    if (file) {
+      const response = uploadImage(file);
+      response.then((res) => {
+        getUrlImage(res.ref.fullPath).then((url) => {
+          console.log("url: ", url);
+          const newUserRegistered = {
+            name: name,
+            lastname: lastname,
+            numfam: numfam,
+            id: id,
+            img: url,
+            uid: auxUid,
+          };
+          if (user) {
+            updateUserRegistered(user.uid, newUserRegistered)
+              .then((res) => {
+                console.log("res succes: ", res);
+                alert("Usuario actualizado exitosamente");
+                history.push("/main-page");
+              })
+              .catch((e) => {
+                console.log("Error", e);
+                alert("ERROR INESPERADO");
+              });
+          } else {
+            alert("no hay usuario");
+          }
+        });
+      });
+    } else {
+      const newUserRegistered = {
+        name: name,
+        lastname: lastname,
+        numfam: numfam,
+        id: id,
+        // img: imgUrl,
+        uid: auxUid,
+      };
+      if (user) {
+        updateUserRegistered(user.uid, newUserRegistered)
+          .then((res) => {
+            console.log("res succes: ", res);
+            alert("Usuario actualizado exitosamente");
+          })
+          .catch((e) => {
+            console.log("Error", e);
+            alert("ERROR INESPERADO");
+          });
+      } else {
+        alert("no hay usuario");
+      }
+    }
   };
 
   const takePhoto = async () => {
@@ -98,6 +180,11 @@ function Register({ history }: any) {
     console.log("newFile: ", newFile);
   };
 
+  const inputRef = useRef<any>(null);
+  const handleClick = () => {
+    inputRef.current.click();
+  };
+
   return (
     <IonPage>
       <IonHeader>
@@ -106,80 +193,78 @@ function Register({ history }: any) {
         </IonToolbar>
       </IonHeader>
       <IonContent>
-        <IonTitle class="ion-text-center" style={{ marginTop: "50px" }}>
-          Añadir Nuevo popeye
-        </IonTitle>
-        <IonImg
-          src="https://th.bing.com/th/id/R.48e1ec1ff0beca94a893d60208fcf360?rik=VIslwWPWkrdR%2bQ&riu=http%3a%2f%2fwww.ecuadorencifras.gob.ec%2fdocumentos%2fweb-inec%2fCalendario_Estadistico%2fCalendario_estaditico_2015%2fimages%2flogo+inec.png&ehk=6apOoaEuAeauNA%2bICrF1a9h2uR2uXRkNxy4XbKIoBK4%3d&risl=&pid=ImgRaw&r=0"
-          alt="The Wisconsin State Capitol building in Madison, WI at night"
-          style={{ width: "300px", marginLeft: "550px" }}
-        ></IonImg>
-        <IonItem
-          color="tertiary"
-          class="ion-margin"
-          style={{ paddingInline: "30%" }}
-        >
-          <IonLabel position="floating">Nombres</IonLabel>
-          <IonInput
-            type="text"
-            required
-            onIonChange={(e) => setName(e.target.value)}
-          ></IonInput>
-        </IonItem>
-        <IonItem
-          color="tertiary"
-          class="ion-margin"
-          style={{ paddingInline: "30%" }}
-        >
-          <IonLabel position="floating">Apellidos</IonLabel>
-          <IonInput
-            type="text"
-            required
-            onIonChange={(e) => setLastname(e.target.value)}
-          ></IonInput>
-        </IonItem>
-        <IonItem
-          color="tertiary"
-          class="ion-margin"
-          style={{ paddingInline: "30%" }}
-        >
-          <IonLabel position="floating">Número de Cargo</IonLabel>
-          <IonInput
-            type="text"
-            required
-            onIonChange={(e) => setNumfam(e.target.value)}
-          ></IonInput>
-        </IonItem>
-        <IonItem
-          color="tertiary"
-          class="ion-margin"
-          style={{ paddingInline: "30%" }}
-        >
-          <IonLabel position="floating">Cédula</IonLabel>
-          <IonInput
-            type="text"
-            required
-            onIonChange={(e) => setId(e.target.value)}
-          ></IonInput>
-        </IonItem>
-
-        <IonButton
-          color="success"
-          size="default"
-          style={{ paddingInline: "47%" }}
-          class="ion-padding-vertical"
-          onClick={submitRegister}
-        >
-          GUARDAR
+        <IonButton routerLink="/main-page" class="ion-padding-vertical">
+          Menu Principal
         </IonButton>
-        <IonButton
-          color="tertiary"
-          size="default"
-          style={{ paddingInline: "45%" }}
-          class="ion-padding-vertical"
-          // onClick={() => takePhoto()}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
         >
-          <input
+          <IonTitle class="ion-text-center" style={{ marginTop: "50px" }}>
+            Añadir Nuevo popeye
+          </IonTitle>
+
+          <IonItem color="tertiary" class="ion-margin">
+            <IonLabel position="floating">Nombres</IonLabel>
+            <IonInput
+              value={name}
+              type="text"
+              required
+              onIonChange={(e) => setName(e.target.value)}
+            ></IonInput>
+          </IonItem>
+          <IonItem color="tertiary" class="ion-margin">
+            <IonLabel position="floating">Apellidos</IonLabel>
+            <IonInput
+              value={lastname}
+              type="text"
+              required
+              onIonChange={(e) => setLastname(e.target.value)}
+            ></IonInput>
+          </IonItem>
+          <IonItem color="tertiary" class="ion-margin">
+            <IonLabel position="floating">Número de Cargo</IonLabel>
+            <IonInput
+              value={numfam}
+              type="text"
+              required
+              onIonChange={(e) => setNumfam(e.target.value)}
+            ></IonInput>
+          </IonItem>
+          <IonItem color="tertiary" class="ion-margin">
+            <IonLabel position="floating">Cédula</IonLabel>
+            <IonInput
+              value={id}
+              type="text"
+              required
+              onIonChange={(e) => setId(e.target.value)}
+            ></IonInput>
+          </IonItem>
+          <IonButton
+            color="tertiary"
+            size="default"
+            onClick={handleClick}
+            class="ion-padding-vertical"
+            // onClick={() => takePhoto()}
+          >
+            Añadir imagen
+            <input
+              style={{ display: "none" }}
+              ref={inputRef}
+              type="file"
+              accept="image/png, image/gif, image/jpeg"
+              onChange={(e: any) => {
+                const file = e.target.files[0];
+                if (!file) {
+                  return;
+                }
+                setFile(file);
+              }}
+            />
+            {/* <input
             type="file"
             onChange={(e: any) => {
               const file = e.target.files[0];
@@ -188,9 +273,30 @@ function Register({ history }: any) {
               }
               setFile(file);
             }}
-          ></input>
-        </IonButton>
-        <IonButton routerLink="/main-page">Menu Principal</IonButton>
+          ></input> */}
+          </IonButton>
+          {valueId ? (
+            <IonButton
+              color="success"
+              size="default"
+              style={{ paddingInline: "47%" }}
+              class="ion-padding-vertical"
+              onClick={submitUpload}
+            >
+              ACTUALIZAR
+            </IonButton>
+          ) : (
+            <IonButton
+              color="success"
+              size="default"
+              style={{ paddingInline: "47%" }}
+              class="ion-padding-vertical"
+              onClick={submitRegister}
+            >
+              GUARDAR
+            </IonButton>
+          )}
+        </div>
       </IonContent>
     </IonPage>
   );

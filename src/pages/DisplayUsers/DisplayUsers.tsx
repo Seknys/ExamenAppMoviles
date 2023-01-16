@@ -13,9 +13,10 @@ import {
 } from "@ionic/react";
 import React, { useContext, useEffect, useState } from "react";
 import UserContext from "../../context/userContext";
-import { getUsersRegisteredByUser } from "../../service/user";
+import { deleteuserData, getUsersRegisteredByUser } from "../../service/user";
 import "./style.css";
 import { Virtuoso } from "react-virtuoso";
+import { Link } from "react-router-dom";
 
 export default function DisplayUsers({ history }: any) {
   const [usersRegistered, setUsersRegistered] = useState<any>([]);
@@ -33,7 +34,13 @@ export default function DisplayUsers({ history }: any) {
     if (user) {
       getUsersRegisteredByUser(user.uid, usersRegisteredFunction);
     }
-  }, []);
+  }, [user]);
+
+  const handleDelete = (userRegistered: any) => {
+    if (user) {
+      deleteuserData(user.uid, userRegistered.uid);
+    }
+  };
   return (
     <IonPage>
       <IonHeader>
@@ -63,38 +70,40 @@ export default function DisplayUsers({ history }: any) {
                   marginRight: "15px",
                   marginBottom: "25px",
                 }}
-                onClick={() => {
-                  console.log("Value: ", user);
-                }}
               >
                 <IonCard key={index} className="user-deleteBttn">
-                  <IonButton color="danger" size="small" className="deleteBtn">
-                    x
+                  <IonButton
+                    color="danger"
+                    size="small"
+                    className="deleteBtn"
+                    onClick={() => handleDelete(user)}
+                  >
+                    X
                   </IonButton>
-
-                  <img
-                    alt={user.name}
-                    src={user.img}
-                    width="280"
-                    height="220"
-                    style={{
-                      objectFit: "cover",
-                    }}
-                  />
-                  <IonCardHeader>
-                    <IonCardTitle>{user.name}</IonCardTitle>
-                    <IonCardSubtitle>{user.id}</IonCardSubtitle>
-                  </IonCardHeader>
-
-                  <IonCardContent>
-                    Direccion:{user.dir}
-                    <br />
-                    Numero de familia:{user.numfam}
-                    <br />
-                    Apellido:{user.lastname}
-                    <br />
-                    Ubicacion GPS:{user.ubication}
-                  </IonCardContent>
+                  <Link
+                    to={`/edit-user/${user.uid}`}
+                    style={{ textDecoration: "none" }}
+                  >
+                    <img
+                      alt={user.name}
+                      src={user.img}
+                      width="280"
+                      height="220"
+                      style={{
+                        objectFit: "cover",
+                      }}
+                    />
+                    <IonCardHeader>
+                      <IonCardTitle>
+                        <b>{user.name}</b> {user.lastname}
+                      </IonCardTitle>
+                      <IonCardSubtitle>{user.id}</IonCardSubtitle>
+                    </IonCardHeader>
+                    <IonCardContent>
+                      Numero de Cargo:{user.numfam}
+                      <br />
+                    </IonCardContent>
+                  </Link>
                 </IonCard>
               </div>
             );

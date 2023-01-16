@@ -28,6 +28,7 @@ import { getCurrentUser, getUserByUid } from "./service/auth";
 import { IUser } from "./interface/user";
 import { UserContextProvider } from "./context/userContext";
 import DisplayUsers from "./pages/DisplayUsers/DisplayUsers";
+import RegisterUserAuth from "./pages/Login/authRegister";
 
 setupIonicReact();
 
@@ -62,15 +63,18 @@ const App: React.FC = () => {
             <Route exact path="/">
               <Redirect to="/login" />
             </Route>
-            <Route exact path="/main-page">
-              <MainPage />
-            </Route>
-            <Route exact path="/register-user-censo">
-              <Register />
-            </Route>
+            <Route exact path="/main-page" component={MainPage} />
+            <Route exact path="/register-user-censo" component={Register} />
+            <Route
+              exact
+              path="/register-newUser"
+              component={RegisterUserAuth}
+            />
+
             <Route exact path="/view-users">
               <DisplayUsers />
             </Route>
+            <Route exact path="/edit-user/:valueId" component={Register} />
           </IonRouterOutlet>
         </IonReactRouter>
       </UserContextProvider>

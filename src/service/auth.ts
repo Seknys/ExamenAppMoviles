@@ -50,8 +50,7 @@ export const userLogin = async (email: string, password: string) => {
 export const RegisterWithEmail = async (
   email: string,
   password: string,
-  name: string,
-  lastName: string
+  name: string
 ) => {
   await createUserWithEmailAndPassword(auth, email, password)
     .then((userCredential) => {
@@ -59,7 +58,7 @@ export const RegisterWithEmail = async (
       const user = userCredential.user;
       console.log("User logged in", user.uid);
       //Save user in database
-      SaveUserToFireBase(user.uid, name, lastName, email, "client");
+      SaveUserToFireBase(user.uid, name, email, "client");
     })
     .catch((error) => {
       const errorCode = error.code;
@@ -72,7 +71,7 @@ export const RegisterWithEmail = async (
 const SaveUserToFireBase = async (
   uid: string,
   name: string,
-  lastName: string,
+
   email: string,
   role: string
 ) => {
@@ -87,7 +86,6 @@ const SaveUserToFireBase = async (
 
   await setDoc(doc(db, "users", uid), {
     name: name,
-    lastName: lastName,
     email: email,
     uid: uid,
     role: role,

@@ -15,6 +15,7 @@ import {
 import { userLogin } from "../../service/auth";
 import { set } from "@firebase/database";
 import { people } from "ionicons/icons";
+import { Link } from "react-router-dom";
 
 function Login({ history }: any) {
   const [email, setEmail] = useState<any>();
@@ -99,6 +100,17 @@ function Login({ history }: any) {
       >
         ENTER
       </IonButton>
+      <Link to="/register-newUser" style={{ textDecoration: "none" }}>
+        <IonButton
+          size="default"
+          style={{ paddingInline: "47%" }}
+          class="ion-padding-vertical"
+          onClick={onSubmit}
+        >
+          REGISTRATE
+        </IonButton>
+      </Link>
+
       {/* <IonFab>
         <IonFabButton>
           <IonIcon icon={people}></IonIcon>
